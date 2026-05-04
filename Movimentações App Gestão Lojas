@@ -1,0 +1,26 @@
+SELECT
+       Z.LOJA                                   AS EMPRESA,
+       TO_CHAR(Z.DATA_VALIDADO,'DD/MM/RRRR')   AS DATA_ATIVIDADE,
+       Z.CODIGO,
+       Z.PRODUTO,
+       DECODE(Z.VALIDADO,
+              'S','SIM',
+              'N','NÃO')                        AS VALIDADO,
+       Z.QTDE_VALIDADA                          AS QTDE_AJUSTADA_APP,
+       Z.ESTOQUE                               AS ESTOQUE_ATUAL,
+       (Z.ESTOQUE + NVL(Z.QTDE_VALIDADA,0))     AS ESTOQUE_ANTES_AJUSTE,
+       DECODE(Z.PROCESSADO,
+              'P','PREVENÇÃO VERIFICAR - NÃO AJUSTADO',
+              'I','PRODUTO EM INVENTÁRIO - NÃO AJUSTADO',
+              'S','AJUSTADO',
+              'N','PENDENTE DE PROCESSAMENTO - NÃO AJUSTADO',
+              'E','ENTRADA RECENTE - NÃO AJUSTADO') AS PROCESSADO_C5,
+       TO_CHAR(Z.DATA_ALTERADOERP,'DD/MM/RRRR') AS DATA_ALTERADO_C5
+FROM NAGT_APP_ATIVIDADES@CONSINCODW Z
+WHERE Z.VALIDADO = 'S'
+AND TRUNC(Z.DATA_VALIDADO) BETWEEN :DT1 AND :DT2
+AND (Z.NRO_LOJA = :NR1 OR :NR1 IS NULL)
+ORDER BY
+       Z.NRO_LOJA,
+       Z.CODIGO,
+       Z.DATA_VALIDADO;
