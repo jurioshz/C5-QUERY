@@ -1,0 +1,21 @@
+-- Primeira query da minha vida
+
+SELECT DISTINCT 
+       e.nroempresa        AS LOJA,
+       p.seqproduto        AS PLU,
+       p.desccompleta      AS DESC_PRODUTO,
+       mc.apelido          AS COMPRADOR
+FROM   consinco.map_produto p
+       INNER JOIN consinco.mrl_produtoempresa pe 
+               ON p.seqproduto = pe.seqproduto
+       INNER JOIN consinco.map_prodcodigo cod
+               ON p.seqproduto = cod.seqproduto
+       INNER JOIN consinco.ge_empresa e 
+               ON pe.nroempresa = e.nroempresa
+       INNER JOIN consinco.map_famdivisao fd
+               ON p.seqfamilia = fd.seqfamilia
+       INNER JOIN consinco.max_comprador mc
+               ON fd.seqcomprador = mc.seqcomprador
+WHERE  pe.statuscompra = 'A'
+  AND  e.nroempresa IN (#LT1)
+ORDER BY e.nroempresa, mc.apelido, p.desccompleta;
