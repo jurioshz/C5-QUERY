@@ -1,0 +1,31 @@
+Ticket: 800948
+Solicitado por: Viviane
+
+select case when nvl(XII.MICROEMPRESA,'N') = 'S' then Z.SEQPESSOA||' - '||Z.NOMERAZAO end FORNEC_SIMPLES_NACIONAL,
+case when nvl(Z.INDPRODRURAL,'N') = 'S' then Z.SEQPESSOA||' - '||Z.NOMERAZAO end FORNEC_PRODUTOR_RURAL,
+case when Z.FISICAJURIDICA = 'F' then lpad(Z.NROCGCCPF,9,0)||lpad(Z.DIGCGCCPF,2,0) else lpad(Z.NROCGCCPF,12,0)||lpad(Z.DIGCGCCPF,2,0) end CNPJ_CPF,
+Z.UF,
+sum(Y.QTD_REC) QTD_NF_RECEBIMENTO,
+round(sum(Y.VLR_REC),2) VLR_RECEBIMENTO,
+sum(Y.QTD_ORC) QTD_NF_ORCAMENTO,
+round(sum(Y.VLR_ORC),2) VLR_ORCAMENTO,
+round(sum(Y.VLR_REC + Y.VLR_ORC),2) VLR_TOTAL
+from (select X.SEQPESSOA, 1 QTD_REC,
+nvl((select sum(nvl(XIII.VLRITEM,0) + nvl(XIII.VLRIPI,0) + nvl(XIII.VLRICMSST,0) + nvl(XIII.VLRFCPST,0) + nvl(XIII.VLRDESPTRIBUTITEM,0) + nvl(XIII.VLRDESPNTRIBUTITEM,0) - nvl(XIII.VLRDESCITEM,0))
+from consinco.MLF_NFITEM XIII
+where XIII.SEQNF = X.SEQNF),0) VLR_REC,
+0 QTD_ORC, 0 VLR_ORC
+from consinco.MLF_NOTAFISCAL X
+where X.TIPNOTAFISCAL = 'E'
+and X.STATUSNF != 'C'
+and X.DTAENTRADA between :DT1 and :DT2
+union all
+select XI.SEQPESSOA, 0, 0, 1, nvl(XI.VALOR,0) - nvl(XI.VLRDESCONTOS,0)
+from consinco.OR_NFDESPESA XI
+where XI.SITUACAO = 'I'
+and XI.DTAENTRADA between :DT1 and :DT2) Y
+inner join consinco.GE_PESSOA Z on Z.SEQPESSOA = Y.SEQPESSOA
+left join consinco.MAF_FORNECEDOR XII on XII.SEQFORNECEDOR = Z.SEQPESSOA
+where (nvl(XII.MICROEMPRESA,'N') = 'S' or nvl(Z.INDPRODRURAL,'N') = 'S')
+group by Z.SEQPESSOA, Z.NOMERAZAO, Z.FISICAJURIDICA, Z.NROCGCCPF, Z.DIGCGCCPF, Z.UF, XII.MICROEMPRESA, Z.INDPRODRURAL
+order by 2 nulls first, 1, 3
